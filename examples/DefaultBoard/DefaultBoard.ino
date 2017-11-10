@@ -11,11 +11,19 @@ boolean addAccelToSD = false; // On writeDataToSDcard() call adds Accel data to 
 boolean addAuxToSD = false; // On writeDataToSDCard() call adds Aux data to SD card write
 boolean SDfileOpen = false; // Set true by SD_Card_Stuff.ino on successful file open
 
+// DigitalRead External Trigger Button
+int pushButton = 17;
+int pushButtonValue;
+
 void setup() {
   // Bring up the OpenBCI Board
   board.begin();
   // Bring up wifi
   wifi.begin(true, true);
+
+  // Set pin to input
+  pinMode(pushButton, INPUT);
+  pushButtonValue = digitalRead(pushButton);
 }
 
 void loop() {
@@ -24,17 +32,33 @@ void loop() {
       // Read from the ADS(s), store data, set channelDataAvailable flag to false
       board.updateChannelData();
 
+      // Check to see if button is pressed
+      int value = digitalRead(pushButton);
+      if (value != pushButtonValue) {
+        // Store button state
+        pushButtonValue = value;
+        board.auxData[0] = value ? 0x6220 : 0;
+
+        // Show the user
+        digitalWrite(OPENBCI_PIN_LED, !value);
+
+        // Write button state
+        if (board.curAccelMode != board.ACCEL_MODE_OFF)
+          board.useAccel(false);
+        addAuxToSD = true;
+      }
       // Check to see if accel has new data
-      if (board.curAccelMode == board.ACCEL_MODE_ON) {
+      else  {
         if(board.accelHasNewData()) {
           // Get new accel data
           board.accelUpdateAxisData();
 
+          if (board.curAccelMode != board.ACCEL_MODE_ON)
+            board.useAccel(true);
+
           // Tell the SD_Card_Stuff.ino to add accel data in the next write to SD
           addAccelToSD = true; // Set false after writeDataToSDcard()
         }
-      } else {
-        addAuxToSD = true;
       }
 
       // Verify the SD file is open
