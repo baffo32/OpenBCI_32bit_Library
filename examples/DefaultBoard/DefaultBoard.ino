@@ -40,7 +40,7 @@ void loop() {
         board.auxData[0] = value ? 0x6220 : 0;
 
         // Show the user
-        digitalWrite(OPENBCI_PIN_LED, !value);
+        digitalWrite(OPENBCI_PIN_LED, value);
 
         // Write button state
         if (board.curAccelMode != board.ACCEL_MODE_OFF)
@@ -69,6 +69,8 @@ void loop() {
 
       board.sendChannelData();
     }
+  } else {
+    digitalWrite(OPENBCI_PIN_LED, (millis() & 0x100) ? HIGH : LOW);
   }
 
   // Check serial 0 for new data
