@@ -27,6 +27,8 @@ void setup() {
 }
 
 void loop() {
+  bool storing = false;
+
   if (board.streaming) {
     if (board.channelDataAvailable) {
       // Read from the ADS(s), store data, set channelDataAvailable flag to false
@@ -65,11 +67,14 @@ void loop() {
       if(SDfileOpen) {
         // Write to the SD card, writes aux data
         writeDataToSDcard(board.sampleCounter);
+        storing = true;
       }
 
       board.sendChannelData();
     }
-  } else {
+  }
+
+  if (!storing) {
     digitalWrite(OPENBCI_PIN_LED, (millis() & 0x100) ? HIGH : LOW);
   }
 
